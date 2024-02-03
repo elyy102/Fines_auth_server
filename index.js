@@ -45,7 +45,7 @@ app.post('/auth', auth)
 
 app.get("/requests/", async (req, res) => {
     const data = await sql`select * from Applications`
-    res.send(data[0])
+    res.send(data)
 })
 
 app.post("/add/", upload.single('image'), async (req, res) => {
