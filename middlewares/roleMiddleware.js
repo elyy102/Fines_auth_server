@@ -16,7 +16,7 @@ export const roleMiddleware = (roles) => {
                 return res.status(403).send({message: "Пользователь не авторизован"})
             }
             //далее вытаскаиваем данные из токена которые мы записывали
-            const {role: userRole} = jwt.verify(token, "SECRET_KEY")
+            const {role: userRole, id} = jwt.verify(token, "SECRET_KEY")
 
             //проверяем есть ли у пользовтеля доступ к ветке проверяя есть ли его роль в массиве ролей
             let hasRole = false

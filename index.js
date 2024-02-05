@@ -6,6 +6,7 @@ import { roleMiddleware } from "./middlewares/roleMiddleware.js";
 import cors from 'cors'
 import multer from 'multer'
 import path from "path"
+import jwt from 'jsonwebtoken'
 
 
 //порт на котором будет работать сервер
@@ -43,16 +44,21 @@ app.post('/reg', register)
 //ветка логина
 app.post('/auth', auth)
 
-app.get("/requests/", async (req, res) => {
-    const data = await sql`select * from Applications`
+app.get("/requests/", roleMiddleware(['USER']), async (req, res) => {
+    const token = req.headers.authorization.split(' ')[1]
+    const {id} = jwt.verify(token, "SECRET_KEY")
+    const data = await sql`select * from Applications where fk_user_id = ${id}`
     res.send(data)
 })
 
-app.post("/add/", upload.single('image'), async (req, res) => {
+app.post("/add/", roleMiddleware(['USER']), upload.single('image'), async (req, res) => {
     const image = req.file.filename
     const { date, place, car_number} = req.body
     console.log(image)
-    const data = await sql`INSERT INTO Applications(date, place, car_number, image) values(${date}, ${place}, ${car_number}, ${`http://localhost:3000/${image}`})`
+    console.log(req.headers.authorization);
+    const token = req.headers.authorization.split(' ')[1]
+    const {id} = jwt.verify(token, "SECRET_KEY")
+    const data = await sql`INSERT INTO Applications(date, place, car_number, image, fk_user_id) values(${date}, ${place}, ${car_number}, ${`http://localhost:3000/${image}`}, ${id})`
     res.sendStatus(200)
 })
 
@@ -71,7 +77,8 @@ const start = async () => {
     await sql`create table if not exists Users(
         id SERIAL PRIMARY KEY NOT NULL,
         name varchar(100) NOT NULL,
-        role varchar(100),
+        email varchar(100),
+        phone_number varchar(100),
         password varchar(100),
         FOREIGN KEY (role) REFERENCES Roles(role)
     )`
@@ -81,7 +88,8 @@ const start = async () => {
         date DATE,
         place VARCHAR(50),
         car_number VARCHAR(15),
-        image varchar(100)
+        image varchar(100),
+        fk_user_id INTEGER REFERENCES users(id)
         )`
 
     //запустить в первый раз и больше не запускать
